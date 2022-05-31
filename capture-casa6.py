@@ -51,7 +51,8 @@ flagbadants= config.getboolean('basic','flagbadants')
 findbadchans = config.getboolean('basic','findbadchans')                         
 flagbadfreq= config.getboolean('basic','flagbadfreq')                           
 flaginit = config.getboolean('basic','flaginit')                             
-doinitcal = config.getboolean('basic','doinitcal')                              
+doinitcal = config.getboolean('basic','doinitcal')
+dosubband1= config.getboolean('basic', 'dosubband1') 
 doflag = config.getboolean('basic','doflag')                              
 redocal = config.getboolean('basic','redocal')                              
 dosplit = config.getboolean('basic','dosplit')                               
@@ -370,6 +371,35 @@ if flaginit == True:
         flagsummary(msfilename)
 #####################################################################
 # Calibration begins.
+
+
+
+if dosubband1 == True:
+                try:
+                        assert os.path.isdir(msfilename), "dosubbandselfcal1 = True but the splitavg file not found."                        
+                except AssertionError:
+                        logging.info("dosubbandselfcal1 = True but the splitavg file not found.")
+                        sys.exit()
+                nspws = getspws(msfilename)
+                print(nspws)
+                logging.info(nspws)
+                if nspws == 1:
+                        mygainspw, msspw = makesubbands1(msfilename,subbandchan) 
+                        bw=getbw(msfilename)
+                        logging.info("Bandwidth is %s",str(bw))
+#if bw<=32E06:
+#raise Exception("GSB files cannot be subbanded. Make dosubbandselfcal False")
+                elif nspws > 1:
+                        msspw = list(range(0,nspws))
+                        print(msspw)
+                casalog.filter('INFO')
+                logging.info("A flagging summary is provided for the MS file.")
+                flagsummary(msfilename)
+                clearcal(vis = msfilename)
+                myfile2 = [msfilename]
+            
+	
+	
 if doinitcal == True:
 	assert os.path.isdir(msfilename)
 	try:
@@ -382,7 +412,7 @@ if doinitcal == True:
 	clearcal(vis=msfilename)
 	for i in range(0,len(myampcals)):
 		default(setjy)
-		setjy(vis=msfilename, spw=flagspw, field=myampcals[i])
+		setjy(vis=msfilename, spw='', field=myampcals[i])
 # Delay calibration  using the first flux calibrator in the list - should depend on which is less flagged
 	gntable=str(msfilename)+'.K1'+mycalsuffix
 	#if os.path.isdir(str(msfilename)+'.K1'+mycalsuffix) == True:
@@ -390,7 +420,7 @@ if doinitcal == True:
 	if os.path.isdir(gntable) == True:
 	        os.system('rm -rf '+gntable)
 	default(gaincal)
-	gaincal(vis=msfilename, caltable=gntable, spw =flagspw, field=myampcals[0], 
+	gaincal(vis=msfilename, caltable=gntable, spw ='', field=myampcals[0], 
 		solint='60s', refant=ref_ant, solnorm= True, gaintype='K', gaintable=[], parang=True)
 	kcorrfield =myampcals[0]
 # an initial bandpass
@@ -401,13 +431,13 @@ if doinitcal == True:
 		os.system('rm -rf '+gntable)
 	default(gaincal)
 	gaincal(vis=msfilename, caltable=gntable, append=False, field=str(','.join(mybpcals)), 
-		spw =flagspw, solint = 'int', refant = ref_ant, minsnr = 2.0, solmode = 'L1R', gaintype = 'G', calmode = 'ap', 
+		spw ='', solint = 'int', refant = ref_ant, minsnr = 2.0, solmode = 'L1R', gaintype = 'G', calmode = 'ap', 
 		gaintable = [str(msfilename)+'.K1'+mycalsuffix], interp = ['nearest,nearestflag', 'nearest,nearestflag' ], parang = True)
 	if os.path.isdir(str(msfilename)+'.B1'+mycalsuffix) == True:
 		os.system('rm -rf '+str(msfilename)+'.B1'+mycalsuffix)
 	bptable=str(msfilename)+'.B1'+mycalsuffix
 	default(bandpass)
-	bandpass(vis=msfilename, caltable=bptable, spw =flagspw, field=str(','.join(mybpcals)), solint='inf', refant=ref_ant, solnorm = True,
+	bandpass(vis=msfilename, caltable=bptable, spw ='', field=str(','.join(mybpcals)), solint='inf', refant=ref_ant, solnorm = True,
 		minsnr=2.0, fillgaps=8, parang = True, gaintable=[str(msfilename)+'.K1'+mycalsuffix,str(msfilename)+'.AP.G0'+mycalsuffix], interp=['nearest,nearestflag','nearest,nearestflag'])
 # do a gaincal on all calibrators
 	mycals=myampcals+mypcals
@@ -445,18 +475,18 @@ if doinitcal == True:
 ##############################
 	for i in range(0,len(myampcals)):
 		default(applycal)
-		applycal(vis=msfilename, field=myampcals[i], spw = flagspw, gaintable=mygaintables, gainfield=[myampcals[i],'',''], 
+		applycal(vis=msfilename, field=myampcals[i], spw = '', gaintable=mygaintables, gainfield=[myampcals[i],'',''], 
 			interp=['nearest','',''], calwt=[False], parang=False)
 #For phase calibrator:
 	if mypcals !=[]:
 		default(applycal)
-		applycal(vis=msfilename, field=str(', '.join(mypcals)), spw = flagspw, gaintable=mygaintables, gainfield=str(', '.join(mypcals)), 
+		applycal(vis=msfilename, field=str(', '.join(mypcals)), spw = '', gaintable=mygaintables, gainfield=str(', '.join(mypcals)), 
 			interp=['nearest','','nearest'], calwt=[False], parang=False)
 #For the target:
 	if target ==True:
 		if mypcals !=[]:
 			default(applycal)
-			applycal(vis=msfilename, field=str(', '.join(mytargets)), spw = flagspw, gaintable=mygaintables,
+			applycal(vis=msfilename, field=str(', '.join(mytargets)), spw = '', gaintable=mygaintables,
 				gainfield=[str(', '.join(mypcals)),'',''],interp=['linear','','nearest'], calwt=[False], parang=False)
 		else:
 			default(applycal)
@@ -477,11 +507,11 @@ if doflag == True:
         logging.info("You have chosen to flag after the initial calibration.")
         default(flagdata)
         if myampcals !=[]:
-                flagdata(vis=msfilename,mode="clip", spw=flagspw,field=str(', '.join(myampcals)), clipminmax=clipfluxcal,
+                flagdata(vis=msfilename,mode="clip", spw='',field=str(', '.join(myampcals)), clipminmax=clipfluxcal,
                         datacolumn="corrected",clipoutside=True, clipzeros=True, extendpols=False, 
                         action="apply",flagbackup=True, savepars=False, overwrite=True, writeflags=True)
         if mypcals !=[]:
-                flagdata(vis=msfilename,mode="clip", spw=flagspw,field=str(', '.join(mypcals)), clipminmax=clipphasecal,
+                flagdata(vis=msfilename,mode="clip", spw='',field=str(', '.join(mypcals)), clipminmax=clipphasecal,
                         datacolumn="corrected",clipoutside=True, clipzeros=True, extendpols=False, 
                         action="apply",flagbackup=True, savepars=False, overwrite=True, writeflags=True)
 # After clip, now flag using 'tfcrop' option for flux and phase cal tight flagging
@@ -495,12 +525,12 @@ if doflag == True:
                         timedevscale=4.0,freqdevscale=4.0,spectralmax=500.0,extendpols=False, growaround=False,
                         flagneartime=False,flagnearfreq=False,action="apply",flagbackup=True,overwrite=True, writeflags=True)
 # Now extend the flags (70% more means full flag, change if required)
-                flagdata(vis=msfilename,mode="extend",spw=flagspw,field=str(', '.join(mypcals)),datacolumn="corrected",clipzeros=True,
+                flagdata(vis=msfilename,mode="extend",spw='',field=str(', '.join(mypcals)),datacolumn="corrected",clipzeros=True,
                          ntime="scan", extendflags=False, extendpols=False,growtime=90.0, growfreq=90.0,growaround=False,
                          flagneartime=False, flagnearfreq=False, action="apply", flagbackup=True,overwrite=True, writeflags=True)
 # Now flag for target - moderate flagging, more flagging in self-cal cycles
         if mytargets !=[]:
-                flagdata(vis=msfilename,mode="clip", spw=flagspw,field=str(', '.join(mytargets)), clipminmax=cliptarget,
+                flagdata(vis=msfilename,mode="clip", spw='',field=str(', '.join(mytargets)), clipminmax=cliptarget,
                         datacolumn="corrected",clipoutside=True, clipzeros=True, extendpols=False, 
                         action="apply",flagbackup=True, savepars=False, overwrite=True, writeflags=True)
 # C-C baselines are selected
@@ -554,7 +584,7 @@ if redocal == True:
 	if os.path.isdir(gntable) == True:
 		os.system('rm -rf '+gntable)
 	default(gaincal)
-	gaincal(vis=msfilename, caltable=gntable, spw =flagspw, field=myampcals[0],solint='60s', refant=ref_ant,solnorm= True, gaintype='K', gaintable=[], parang=True)
+	gaincal(vis=msfilename, caltable=gntable, spw ='', field=myampcals[0],solint='60s', refant=ref_ant,solnorm= True, gaintype='K', gaintable=[], parang=True)
 	kcorrfield =myampcals[0]
 #        print 'wrote table',str(msfilename)+'.K1'+mycalsuffix
 # an initial bandpass
@@ -564,12 +594,12 @@ if redocal == True:
 	if os.path.isdir(gntable) == True:
 		os.system('rm -rf '+gntable)
 	default(gaincal)
-	gaincal(vis=msfilename, caltable=gntable, append=False, field=str(','.join(mybpcals)),spw =flagspw, solint = 'int', refant = ref_ant, minsnr = 2.0, solmode ='L1R', gaintype = 'G', calmode = 'ap', gaintable = [str(msfilename)+'.K1'+mycalsuffix],interp = ['nearest,nearestflag', 'nearest,nearestflag' ], parang = True)
+	gaincal(vis=msfilename, caltable=gntable, append=False, field=str(','.join(mybpcals)),spw ='', solint = 'int', refant = ref_ant, minsnr = 2.0, solmode ='L1R', gaintype = 'G', calmode = 'ap', gaintable = [str(msfilename)+'.K1'+mycalsuffix],interp = ['nearest,nearestflag', 'nearest,nearestflag' ], parang = True)
 	if os.path.isdir(str(msfilename)+'.B1'+mycalsuffix) == True:
 		os.system('rm -rf '+str(msfilename)+'.B1'+mycalsuffix)
 	bptable=str(msfilename)+'.B1'+mycalsuffix
 	default(bandpass)
-	bandpass(vis=msfilename, caltable=bptable, spw =flagspw, field=str(','.join(mybpcals)), solint='inf', refant=ref_ant, solnorm = True,
+	bandpass(vis=msfilename, caltable=bptable, spw ='', field=str(','.join(mybpcals)), solint='inf', refant=ref_ant, solnorm = True,
 		minsnr=2.0, fillgaps=8, parang = True, gaintable=[str(msfilename)+'.K1'+mycalsuffix,str(msfilename)+'.AP.G0'+mycalsuffix], interp=['nearest,nearestflag','nearest,nearestflag'])
 # do a gaingal on all calibrators
 	mycals=myampcals+mypcals
@@ -607,22 +637,22 @@ if redocal == True:
 ###############################################################
 	for i in range(0,len(myampcals)):
 		default(applycal)
-		applycal(vis=msfilename, field=myampcals[i], spw = flagspw, gaintable=mygaintables, gainfield=[myampcals[i],'',''], 
+		applycal(vis=msfilename, field=myampcals[i], spw ='', gaintable=mygaintables, gainfield=[myampcals[i],'',''], 
 			interp=['nearest','',''], calwt=[False], parang=False)
 #For phase calibrator:
 	if mypcals !=[]:
 		default(applycal)
-		applycal(vis=msfilename, field=str(', '.join(mypcals)), spw = flagspw, gaintable=mygaintables, gainfield=str(', '.join(mypcals)), 
+		applycal(vis=msfilename, field=str(', '.join(mypcals)), spw = '', gaintable=mygaintables, gainfield=str(', '.join(mypcals)), 
 			interp=['nearest','','nearest'], calwt=[False], parang=False)
 #For the target:
 	if target ==True:
 		if mypcals !=[]:
 			default(applycal)
-			applycal(vis=msfilename, field=str(', '.join(mytargets)), spw = flagspw, gaintable=mygaintables,
+			applycal(vis=msfilename, field=str(', '.join(mytargets)), spw = '', gaintable=mygaintables,
 				gainfield=[str(', '.join(mypcals)),'',''],interp=['linear','','nearest'], calwt=[False], parang=False)
 		else:
 			default(applycal)
-			applycal(vis=msfilename, field=str(', '.join(mytargets)), spw = flagspw, gaintable=mygaintables,
+			applycal(vis=msfilename, field=str(', '.join(mytargets)), spw = '', gaintable=mygaintables,
 				gainfield=[str(', '.join(myampcals)),'',''],interp=['linear','','nearest'], calwt=[False], parang=False)                        
 	plot_files = my_dig_plot(msfilename,myfields,myampcals,mypcals,mytargets,mycalsuffix,bptable,gntable)
 	logging.info("Finished re-calibration.")
@@ -661,7 +691,7 @@ if dosplit == True:
                         os.system('rm -rf '+mytargets[i]+'split.ms.flagversions') #SGRBsplit.ms.flagversions
                 logging.info("Splitting target source data.")
                 logging.info(gainspw1)
-                splitfilename = mysplitinit(msfilename,mytargets[i],gainspw1,1,mytargets[i]+'split.ms')
+                splitfilename = mysplitinit(msfilename,mytargets[i],1,mytargets[i]+'split.ms')
 #############################################################
 # Flagging on split file
 #############################################################

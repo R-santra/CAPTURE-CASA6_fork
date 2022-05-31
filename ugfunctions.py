@@ -214,6 +214,56 @@ def myrflagavg(myfile,myfield, myants, mytimdev, myfdev,mydatcol,myflagspw):
                 channelavg=False, timeavg=False, action='apply', display='none')
         return
 
+
+
+
+def makesubbands1(msfilename,subbandchan):
+#        if os.path.isdir(str(mscal*)) == True:
+        try:
+                os.system('rm -rf mscal*')
+        except (RuntimeError, TypeError, NameError):
+                pass
+        splitspw=[]
+        msspw=[]
+        gainsplitspw=[]
+        xchan=subbandchan
+        myx=getnchan(msfilename)
+        if myx>xchan:
+                mynchani=myx
+                xs=0
+                while mynchani>0:
+                        if mynchani>xchan:
+                            spwi='0:'+str(xs*xchan)+'~'+str(((xs+1)*xchan)-1)
+                            if xs==0:
+                                gspwi='0:'+str(0)+'~'+str(((xs+1)*xchan)-1)
+                            else:
+                                gspwi='0:'+str(0)+'~'+str(xchan-1)
+                        if mynchani<=xchan:
+                            spwi='0:'+str(xs*xchan)+'~'+str((xs*xchan)+mynchani-1)
+                            gspwi='0:'+str(0)+'~'+str(mynchani-1)
+                        gainsplitspw.append(gspwi)
+                        msspw.append(spwi)
+                        mynchani=mynchani-xchan
+                        msfilenamei="mscal"+str(xs)+".ms"
+                        xs=xs+1
+                        splitspw.append(msfilenamei)
+                logging.info(gainsplitspw)
+                logging.info(msspw)
+                logging.info(splitspw)
+                for numspw in range(0,len(msspw)):
+                        default(mstransform)
+                        mstransform(vis=msfilename,outputvis=splitspw[numspw],spw=msspw[numspw],chanaverage=False,datacolumn='all',realmodelcol=True)
+                if os.path.isdir(" old"+msfilename) == True:
+                        os.system("rm -r"+" old"+msfilename)
+                if os.path.isdir(" old"+msfilenamei+".flagversions") == True:
+                        os.system("rm -r"+" old"+msfilename+".flagversions")
+                os.system("mv "+msfilename+".flagversions old"+msfilename+".flagversions")
+                os.system("mv  "+msfilename+" old"+msfilename)
+                concat(vis=splitspw,concatvis=msfilename)
+        mygainspw2=gainsplitspw
+        return mygainspw2, msspw
+
+
 def getgainspw(msfilename):
         mynchan = getnchan(msfilename)
         logging.info('The number of channels in your file %d',mynchan)

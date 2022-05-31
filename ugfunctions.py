@@ -192,7 +192,7 @@ def getfluxcal_redo(myfile,mycalref,myscal):
 
 def mytfcrop(myfile,myfield,myants,tcut,fcut,mydatcol,myflagspw):
         default(flagdata)
-        flagdata(vis=myfile, antenna = myants, field = myfield,        spw = myflagspw, mode='tfcrop', ntime='300s', combinescans=False,
+        flagdata(vis=myfile, antenna = myants, field = myfield,        spw = '', mode='tfcrop', ntime='300s', combinescans=False,
                 datacolumn=mydatcol, timecutoff=tcut, freqcutoff=fcut, timefit='line', freqfit='line', flagdimension='freqtime',
                 usewindowstats='sum', extendflags = False, action='apply', display='none')
         return
@@ -200,7 +200,7 @@ def mytfcrop(myfile,myfield,myants,tcut,fcut,mydatcol,myflagspw):
 
 def myrflag(myfile,myfield, myants, mytimdev, myfdev,mydatcol,myflagspw):
         default(flagdata)
-        flagdata(vis=myfile, field = myfield, spw = myflagspw, antenna = myants, mode='rflag', ntime='scan', combinescans=False,
+        flagdata(vis=myfile, field = myfield, spw = '', antenna = myants, mode='rflag', ntime='scan', combinescans=False,
                 datacolumn=mydatcol, winsize=3, timedevscale=mytimdev, freqdevscale=myfdev, spectralmax=1000000.0, spectralmin=0.0,
                 extendflags=False, channelavg=False, timeavg=False, action='apply', display='none')
         return
@@ -208,7 +208,7 @@ def myrflag(myfile,myfield, myants, mytimdev, myfdev,mydatcol,myflagspw):
 
 def myrflagavg(myfile,myfield, myants, mytimdev, myfdev,mydatcol,myflagspw):
         default(flagdata)
-        flagdata(vis=myfile, field = myfield, spw = myflagspw, antenna = myants, mode='rflag', ntime='300s', combinescans=True,
+        flagdata(vis=myfile, field = myfield, spw = '', antenna = myants, mode='rflag', ntime='300s', combinescans=True,
                 datacolumn=mydatcol, winsize=3,        minchanfrac= 0.8, flagneartime = True, basecnt = True, fieldcnt = True,
                 timedevscale=mytimdev, freqdevscale=myfdev, spectralmax=1000000.0, spectralmin=0.0, extendflags=False,
                 channelavg=False, timeavg=False, action='apply', display='none')
@@ -386,22 +386,22 @@ def getgainspw(msfilename):
 
 
 
-def mysplitinit(myfile,myfield,myspw,mywidth,split_filename):
+def mysplitinit(myfile,myfield,mywidth,split_filename):
         '''function to split corrected data for any field'''
         default(mstransform)
-        #mstransform(vis=myfile, field=myfield, spw=myspw, chanaverage=False, chanbin=mywidth, datacolumn='corrected', outputvis=str(myfield)+'.split.ms')
+        #mstransform(vis=myfile, field=myfield, spw='', chanaverage=False, chanbin=mywidth, datacolumn='corrected', outputvis=str(myfield)+'.split.ms')
         mstransform(vis=myfile, field=myfield, spw=myspw, chanaverage=False, chanbin=mywidth, datacolumn='corrected', outputvis=split_filename)
         #myoutvis=str(myfield)+'.split.ms'
         #return myoutvis
         return split_filename
 
 
-def mysplitavg(myfile,myfield,myspw,mywidth,split_avg_filename):
+def mysplitavg(myfile,myfield,,mywidth,split_avg_filename):
         '''function to split corrected data for any field'''
 #        myoutname=myfile.split('s')[0]+'avg-split.ms'
         #myoutname='avg-'+myfile
         default(mstransform)
-        #mstransform(vis=myfile, field=myfield, spw=myspw, chanaverage=True, chanbin=mywidth, datacolumn='data', outputvis=myoutname)
+        #mstransform(vis=myfile, field=myfield, spw='', chanaverage=True, chanbin=mywidth, datacolumn='data', outputvis=myoutname)
         mstransform(vis=myfile, field=myfield, spw=myspw, chanaverage=True, chanbin=mywidth, datacolumn='data', outputvis=split_avg_filename)
         #return myoutname
         return split_avg_filename
